@@ -35,7 +35,7 @@ function ensure_directory {
 }
 
 function escape_repo {
-	echo "$1" | perl -pe 's@([^a-zA-Z0-9-])@sprintf "_%02x", ord($1)@ge;'
+	echo -n "$1" | perl -pe 's@([^a-zA-Z0-9-])@sprintf "_%02x", ord($1)@ge;'
 }
 
 function git_mirror {
