@@ -50,7 +50,7 @@ function git_mirror {
 		echo "Updating $REPO" >&3
 		(
 			cd "$CACHEDIR/$EREPO"
-			git remote update --prune >/dev/null 2>&1
+			git remote update --prune >/dev/null
 		)
 		echo "$EREPO" >> "$SCRATCH/refreshed"
 	fi
