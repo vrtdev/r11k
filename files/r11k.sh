@@ -65,9 +65,13 @@ MASTER_GIT_DIR="$( git_mirror "$REPO" )"
 
 if [ -t 1 ]; then
 	FONT_GREEN="$(echo -e "\x1b[32m")"
-	FONT_NORMAL="$(echo -e "\x1b[39;49m")"
+	FONT_GREEN_BOLD="$(echo -e "\x1b[32;1m")"
+	FONT_RED="$(echo -e "\x1b[31m")"
+	FONT_NORMAL="$(echo -e "\x1b[39;22;49m")"
 else
 	FONT_GREEN=""
+	FONT_GREEN_BOLD=""
+	FONT_RED=""
 	FONT_NORMAL=""
 fi
 
@@ -75,12 +79,12 @@ function do_submodules {
 	git submodule init
 	git submodule sync >/dev/null
 	git submodule | awk '{print $2}' | while read mod; do
-		URL="$( git config --get "submodule.$mod.url" )"
-		LOCAL="$( git_mirror "$URL" )"
-		echo "${FONT_GREEN}Checking out submodule $branch/$mod${FONT_NORMAL}"
-		git submodule update --reference "$LOCAL" "$mod"
+		URL="$( git config --get "submodule.${mod}.url" )"
+		LOCAL="$( git_mirror "${URL}" )"
+		echo "${FONT_GREEN}Checking out submodule ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}${FONT_GREEN}/${mod}${FONT_NORMAL}"
+		git submodule update --reference "${LOCAL}" "${mod}"
 		(
-			cd "$mod"
+			cd "${mod}"
 			#do_submodules # recurse down
 		)
 	done
@@ -90,7 +94,7 @@ GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
 	sed 's%.\{40\} refs/heads/%%' | # strip of hash and refs/heads/ prefix
 	while read branch; do
 	echo "$branch" >> "$SCRATCH/branches"
-	echo "${FONT_GREEN}Checking out branch $branch${FONT_NORMAL}"
+	echo "${FONT_GREEN_BOLD}Checking out branch ${branch}${FONT_NORMAL}"
 
 	# `git worktree` is not usable with submodules: the submodule URL is saved
 	# in the $GIT_COMMON_DIR/config, which is common for all workdir's (git
@@ -105,7 +109,7 @@ GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
 			-b "$branch" "$MASTER_GIT_DIR" "$BASEDIR/$branch"
 	fi
 	(
-		cd "$BASEDIR/$branch"
+		cd "${BASEDIR}/${branch}"
 		git remote set-url origin "$MASTER_GIT_DIR"
 		git fetch origin "$branch"
 		git reset --hard "origin/$branch"
@@ -115,7 +119,7 @@ done
 
 ( cd "$BASEDIR"; ls -1 ) | while read dir; do
 	if ! grep -q "$dir" "$SCRATCH/branches"; then
-		echo "Removing non-existant branch $dir"
+		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
 		rm -rf "$BASEDIR/$dir"
 	fi
 done
