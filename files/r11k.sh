@@ -42,7 +42,9 @@ function git_mirror {
 	REPO="$1"
 	EREPO="$( escape_repo "$REPO" )"
 	if [ ! -d "$CACHEDIR/$EREPO" ]; then
-		git clone --mirror "$REPO" "$CACHEDIR/$EREPO"
+		if ! git clone --mirror "$REPO" "$CACHEDIR/$EREPO"; then
+			return 1
+		fi
 	fi
 	echo "$CACHEDIR/$EREPO"
 	touch "$SCRATCH/refreshed"
@@ -50,7 +52,9 @@ function git_mirror {
 		echo "Updating $REPO" >&3
 		(
 			cd "$CACHEDIR/$EREPO"
-			git remote update --prune >/dev/null
+			if ! git remote update --prune >/dev/null; then
+				return 1
+			fi
 		)
 		echo "$EREPO" >> "$SCRATCH/refreshed"
 	fi
@@ -79,9 +83,14 @@ function do_submodules {
 	git submodule init
 	git submodule sync >/dev/null
 	git submodule | awk '{print $2}' | while read mod; do
+		echo "${FONT_GREEN}Checking out submodule ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}${FONT_GREEN}/${mod}${FONT_NORMAL}"
+
 		URL="$( git config --get "submodule.${mod}.url" )"
 		LOCAL="$( git_mirror "${URL}" )"
-		echo "${FONT_GREEN}Checking out submodule ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}${FONT_GREEN}/${mod}${FONT_NORMAL}"
+		if [ $? -ne 0 ]; then
+			return 1
+		fi
+
 		git submodule update --reference "${LOCAL}" "${mod}"
 		(
 			cd "${mod}"
