@@ -113,7 +113,11 @@ GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
 		git remote set-url origin "$MASTER_GIT_DIR"
 		git fetch origin "$branch"
 		git reset --hard "origin/$branch"
-		do_submodules
+		if ! do_submodules; then
+			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
+			cd "${BASEDIR}"
+			rm -rf "${branch}"
+		fi
 	)
 done
 
