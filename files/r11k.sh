@@ -102,30 +102,31 @@ function do_submodules {
 GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
 	sed 's%.\{40\} refs/heads/%%' | # strip of hash and refs/heads/ prefix
 	while read branch; do
-	echo "$branch" >> "$SCRATCH/branches"
-	echo "${FONT_GREEN_BOLD}Checking out branch ${branch}${FONT_NORMAL}"
+	branch_envname="$(sed -e 's/\//__/g' <<<"$branch")"
+	echo "$branch_envname" >> "$SCRATCH/branches"
+	echo "${FONT_GREEN_BOLD}Checking out branch ${branch} into ${branch_envname}${FONT_NORMAL}"
 
 	# `git worktree` is not usable with submodules: the submodule URL is saved
 	# in the $GIT_COMMON_DIR/config, which is common for all workdir's (git
 	# v2.5.0)
 
-	if [ ! -e "$BASEDIR/$branch/.git" ]; then
+	if [ ! -e "$BASEDIR/$branch_envname/.git" ]; then
 		# Not a git repo, remove it, so it will be created below
-		rm -rf "$BASEDIR/$branch"
+		rm -rf "$BASEDIR/$branch_envname"
 	fi
-	if [ ! -e "$BASEDIR/$branch" ]; then
+	if [ ! -e "$BASEDIR/$branch_envname" ]; then
 		git clone --reference "$MASTER_GIT_DIR" --shared \
-			-b "$branch" "$MASTER_GIT_DIR" "$BASEDIR/$branch"
+			-b "$branch" "$MASTER_GIT_DIR" "$BASEDIR/$branch_envname"
 	fi
 	(
-		cd "${BASEDIR}/${branch}"
+		cd "${BASEDIR}/${branch_envname}"
 		git remote set-url origin "$MASTER_GIT_DIR"
 		git fetch origin "$branch"
 		git reset --hard "origin/$branch"
 		if ! do_submodules; then
 			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
 			cd "${BASEDIR}"
-			rm -rf "${branch}"
+			rm -rf "${branch_envname}"
 		fi
 	)
 done
