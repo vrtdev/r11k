@@ -7,4 +7,8 @@ class r11k::install {
     mode   => '0755',
     source => 'puppet:///modules/r11k/r11k.sh',
   }
+
+  file { ['/etc/r11k','/etc/r11k/hooks.d']:
+    ensure => directory,
+  }
 }

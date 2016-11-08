@@ -5,17 +5,20 @@ set -o pipefail # pipes fail when any command fails, not just the last one
 set -o nounset # exit on use of undeclared var
 #set -o xtrace
 
-if [ $# -gt 3 ]; then
-	echo "Usage: $0 [<repo> [<basedir> [<cachedir>]]]"
+if [ $# -gt 4 ]; then
+	echo "Usage: $0 [<repo> [<basedir> [<cachedir>] [<hooksdir>]]]"
 	echo "  repo defaults to \`.\`"
 	echo "  basedir defaults to \`environments\`"
 	echo "  cachedir defaults to \`\${basedir}/.cache\`"
+  echo "  hooksdir defaults to \`/etc/r11k/hooks.d\`"
 	exit 64 # EX_USAGE
 fi
 
 REPO="${1:-.}"
 BASEDIR="${2:-environments}"
 CACHEDIR="${3:-${BASEDIR}/.cache}"
+HOOKSDIR="${4:-/etc/r11k/hooks.d}"
+CHANGE_COUNTER=0
 
 SCRATCH="$( mktemp -d 2>/dev/null || mktemp -d -t 'r11k' )"
 function cleanup {
@@ -51,6 +54,7 @@ function git_mirror {
 	if ! grep -q "$EREPO" "$SCRATCH/refreshed"; then
 		echo "Updating $REPO" >&3
 		(
+      let CHANGE_COUNTER+=1
 			cd "$CACHEDIR/$EREPO"
 			if ! git remote update --prune >/dev/null; then
 				return 1
@@ -117,6 +121,7 @@ GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
 	if [ ! -e "$BASEDIR/$branch_envname" ]; then
 		git clone --reference "$MASTER_GIT_DIR" --shared \
 			-b "$branch" "$MASTER_GIT_DIR" "$BASEDIR/$branch_envname"
+    let CHANGE_COUNTER+=1
 	fi
 	(
 		cd "${BASEDIR}/${branch_envname}"
@@ -135,5 +140,19 @@ done
 	if ! grep -q "$dir" "$SCRATCH/branches"; then
 		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
 		rm -rf "$BASEDIR/$dir"
+    let CHANGE_COUNTER+=1
 	fi
+
+# if CHANGE_COUNTER > 0, run the all the hooks found in $HOOKSDIR
+if [ -d $HOOKSDIR ]; then
+  if ${CHANGE_COUNTER} > 0; then
+    for SCRIPT in `ls ${HOOKSDIR}`; do
+      # run script
+      ${HOOKSDIR}/${SCRIPT}
+    done
+  fi
+else
+  echo "HOOKSDIR ${HOOKSDIR} not found"
+fi
+
 done
