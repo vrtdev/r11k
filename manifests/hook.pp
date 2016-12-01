@@ -11,7 +11,7 @@
 define r11k::hook (
   String $hook_source,
   String $hook_folder = '/etc/r11k/hooks.d',
-  Optional[Array] $hook_dependencies = undef,
+  Optional[Hash] $hook_dependencies = undef,
   Optional[String] $config_file = undef,
   String $config_content = '',
 ){
