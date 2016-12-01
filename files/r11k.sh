@@ -6,12 +6,12 @@ set -o nounset # exit on use of undeclared var
 #set -o xtrace
 
 if [ $# -gt 4 ]; then
-	echo "Usage: $0 [<repo> [<basedir> [<cachedir>] [<hooksdir>]]]"
-	echo "  repo defaults to \`.\`"
-	echo "  basedir defaults to \`environments\`"
-	echo "  cachedir defaults to \`\${basedir}/.cache\`"
+  echo "Usage: $0 [<repo> [<basedir> [<cachedir>] [<hooksdir>]]]"
+  echo "  repo defaults to \`.\`"
+  echo "  basedir defaults to \`environments\`"
+  echo "  cachedir defaults to \`\${basedir}/.cache\`"
   echo "  hooksdir defaults to \`/etc/r11k/hooks.d\`"
-	exit 64 # EX_USAGE
+  exit 64 # EX_USAGE
 fi
 
 REPO="${1:-.}"
@@ -54,7 +54,6 @@ function git_mirror {
 	if ! grep -q "$EREPO" "$SCRATCH/refreshed"; then
 		echo "Updating $REPO" >&3
 		(
-      let CHANGE_COUNTER+=1
 			cd "$CACHEDIR/$EREPO"
 			if ! git remote update --prune >/dev/null; then
 				return 1
@@ -103,9 +102,7 @@ function do_submodules {
 	done
 }
 
-GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
-	sed 's%.\{40\} refs/heads/%%' | # strip of hash and refs/heads/ prefix
-	while read branch; do
+while read branch; do
 	branch_envname="$(sed -e 's/\//__/g' <<<"$branch")"
 	echo "$branch_envname" >> "$SCRATCH/branches"
 	echo "${FONT_GREEN_BOLD}Checking out branch ${branch} into ${branch_envname}${FONT_NORMAL}"
@@ -134,18 +131,19 @@ GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads |
 			rm -rf "${branch_envname}"
 		fi
 	)
-done
+done < <(GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads | sed 's%.\{40\} refs/heads/%%')
 
-( cd "$BASEDIR"; ls -1 ) | while read dir; do
+while read dir; do
 	if ! grep -q "$dir" "$SCRATCH/branches"; then
 		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
 		rm -rf "$BASEDIR/$dir"
     let CHANGE_COUNTER+=1
 	fi
+done < <(cd "$BASEDIR"; ls -1)
 
 # if CHANGE_COUNTER > 0, run the all the hooks found in $HOOKSDIR
 if [ -d $HOOKSDIR ]; then
-  if ${CHANGE_COUNTER} > 0; then
+  if [ ${CHANGE_COUNTER} -gt 0 ]; then
     for SCRIPT in `ls ${HOOKSDIR}`; do
       # run script
       ${HOOKSDIR}/${SCRIPT}
@@ -154,5 +152,3 @@ if [ -d $HOOKSDIR ]; then
 else
   echo "HOOKSDIR ${HOOKSDIR} not found"
 fi
-
-done
