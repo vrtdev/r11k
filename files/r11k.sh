@@ -9,12 +9,12 @@ set -o nounset # exit on use of undeclared var
 #set -o xtrace
 
 if [ $# -gt 4 ]; then
-  echo "Usage: $0 [<repo> [<basedir> [<cachedir>] [<hooksdir>]]]"
-  echo "  repo defaults to \`.\`"
-  echo "  basedir defaults to \`environments\`"
-  echo "  cachedir defaults to \`\${basedir}/.cache\`"
-  echo "  hooksdir defaults to \`/etc/r11k/hooks.d\`"
-  exit 64 # EX_USAGE
+	echo "Usage: $0 [<repo> [<basedir> [<cachedir>] [<hooksdir>]]]"
+	echo "  repo defaults to \`.\`"
+	echo "  basedir defaults to \`environments\`"
+	echo "  cachedir defaults to \`\${basedir}/.cache\`"
+	echo "  hooksdir defaults to \`/etc/r11k/hooks.d\`"
+	exit 64 # EX_USAGE
 fi
 
 REPO="${1:-.}"
@@ -121,7 +121,7 @@ while read branch; do
 	if [ ! -e "$BASEDIR/$branch_envname" ]; then
 		git clone --reference "$MASTER_GIT_DIR" --shared \
 			-b "$branch" "$MASTER_GIT_DIR" "$BASEDIR/$branch_envname"
-    let CHANGE_COUNTER+=1
+		let CHANGE_COUNTER+=1
 	fi
 	(
 		cd "${BASEDIR}/${branch_envname}"
@@ -140,18 +140,18 @@ while read dir; do
 	if ! grep -q "$dir" "$SCRATCH/branches"; then
 		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
 		rm -rf "$BASEDIR/$dir"
-    let CHANGE_COUNTER+=1
+		let CHANGE_COUNTER+=1
 	fi
 done < <(cd "$BASEDIR"; ls -1)
 
 # if CHANGE_COUNTER > 0, run the all the hooks found in $HOOKSDIR
 if [ -d $HOOKSDIR ]; then
   if [ ${CHANGE_COUNTER} -gt 0 ]; then
-    for SCRIPT in `ls ${HOOKSDIR}`; do
-      # run script
-      ${HOOKSDIR}/${SCRIPT}
-    done
+	for SCRIPT in `ls ${HOOKSDIR}`; do
+		# run script
+		${HOOKSDIR}/${SCRIPT}
+	done
   fi
 else
-  echo "HOOKSDIR ${HOOKSDIR} not found"
+	echo "HOOKSDIR ${HOOKSDIR} not found"
 fi
