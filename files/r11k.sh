@@ -1,4 +1,7 @@
 #!/bin/bash
+## File managed by puppet
+#  * module: r11k
+#  * file: r11k.sh
 
 set -o errexit # exit on command failure
 set -o pipefail # pipes fail when any command fails, not just the last one
