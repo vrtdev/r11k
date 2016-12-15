@@ -23,7 +23,7 @@ CACHEDIR="${3:-${BASEDIR}/.cache}"
 HOOKSDIR="${4:-/etc/r11k/hooks.d}"
 CHANGE_COUNTER=0
 
-LOCKFILE="${BASEDIR}/lock"
+LOCKFILE="${BASEDIR}/.lock"
 if ( set -o noclobber; echo "$$" > "$LOCKFILE") 2> /dev/null; then
 	SCRATCH="$( mktemp -d 2>/dev/null || mktemp -d -t 'r11k' )"
 	function cleanup {
