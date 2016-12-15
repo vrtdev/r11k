@@ -23,11 +23,18 @@ CACHEDIR="${3:-${BASEDIR}/.cache}"
 HOOKSDIR="${4:-/etc/r11k/hooks.d}"
 CHANGE_COUNTER=0
 
-SCRATCH="$( mktemp -d 2>/dev/null || mktemp -d -t 'r11k' )"
-function cleanup {
-	rm -rf "$SCRATCH"
-}
-trap cleanup EXIT
+LOCKFILE="${BASEDIR}/lock"
+if ( set -o noclobber; echo "$$" > "$LOCKFILE") 2> /dev/null; then
+	SCRATCH="$( mktemp -d 2>/dev/null || mktemp -d -t 'r11k' )"
+	function cleanup {
+		rm -rf "$SCRATCH"
+		rm "$LOCKFILE"
+	}
+	trap cleanup EXIT
+else
+	echo "Could not create \`${LOCKFILE}\`. Not running."
+	exit 75 # TEMPERR
+fi
 
 exec 3>&1 # So we can output to stdout from within backticks
 
