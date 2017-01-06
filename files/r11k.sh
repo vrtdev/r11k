@@ -162,3 +162,4 @@ if [ -d $HOOKSDIR ]; then
 else
 	echo "HOOKSDIR ${HOOKSDIR} not found"
 fi
+# vim: set ts=4 sw=2 tw=0 noet :
