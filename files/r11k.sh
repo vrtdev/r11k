@@ -8,43 +8,103 @@ set -o pipefail # pipes fail when any command fails, not just the last one
 set -o nounset # exit on use of undeclared var
 #set -o xtrace
 
-if [ $# -gt 4 ]; then
-	echo "Usage: $0 [<repo> [<basedir> [<cachedir>] [<hooksdir>]]]"
-	echo "  repo defaults to \`.\`"
-	echo "  basedir defaults to \`environments\`"
-	echo "  cachedir defaults to \`\${basedir}/.cache\`"
-	echo "  hooksdir defaults to \`/etc/r11k/hooks.d\`"
-	exit 64 # EX_USAGE
+DEFAULT_REPO="."
+DEFAULT_BASEDIR="environments"
+DEFAULT_HOOKSDIR="/etc/r11k/hooks.d"
+
+LOCK="fail"
+
+function _help() {
+	cat <<EOHELP
+USAGE: $0 [options] [repo]
+
+ARGUMENTS:
+
+    [repo]          Clone of the git repo to map in the basedir.
+                    Defaults to \`${DEFAULT_REPO}\`
+
+OPTIONS:
+
+    -b,--basedir    Target base directory.
+                    Defaults: \`${DEFAULT_BASEDIR}\`
+    -c,--cachedir   Directory to use for caching the git repositories
+                    (Including the found submodules).
+                    Defaults to a subfolder \`.cache\` in the basedir.
+    -k,--hooksdir   Directory with hooks to run after the deploy was executed.
+                    Default: \`${DEFAULT_HOOKSDIR}\`
+    -i,--include    Branch or regex of branches to map. You can repeat this
+                    option to include multiple branches/filters or provide
+                    a list separated by colon \`:\`.  Defaults to
+                    all found branches in the repository.
+    -h,--help       Display this message and exit.
+    -w,--no-wait    Don't wait for another r11k run to finish, but fail
+                    immediately if another run is detected.
+
+ENVIRONMENT:
+
+    R11K_BASEDIR    Sets the default basedir to use.
+    R11K_CACHEDIR   Sets the default cache dir to use.
+    R11K_HOOKSDIR   Sets the default hooks dir to use.
+    R11K_INCLUDES   A colon separated list with branches/filters to use.
+
+EOHELP
+}
+
+## No options = show help + exit EX_USAGE
+if GETOPT_TEMP="$( getopt --shell bash --name "$0" \
+	-o b:c:k:i:hw \
+	-l basedir:,cachedir:,hooksdir:,include:,help,no-wait \
+	-- "$@" )"; then
+	eval set -- "${GETOPT_TEMP}"
+else
+	exit 64
+fi;
+
+declare -a CMD_INCLUDES=()
+while [ $# -gt 0 ]; do
+	case "${1}" in
+		-b|--basedir)   R11K_BASEDIR="${2}"; shift 2;;
+		-c|--cachedir)  R11K_CACHEDIR="${2}"; shift 2;;
+		-k|--hooksdir)  R11K_HOOKSDIR="${2}"; shift 2;;
+		-i|--include)   IFS=: read -ra NEW_INCLUDES <<<"${2}"
+		                CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
+		                shift 2;;
+		-h|--help)      _help; exit 0;;
+		-w|--no-wait)   LOCK="wait"; shift;;
+		--)             shift; break;;
+		*)              break;;
+	esac
+done
+
+REPO="${R11K_REPO-${DEFAULT_REPO}}"
+BASEDIR="${R11K_BASEDIR-${DEFAULT_BASEDIR}}"
+DEFAULT_CACHEDIR="${BASEDIR}/.cache"
+CACHEDIR="${R11K_CACHEDIR-${DEFAULT_CACHEDIR}}"
+HOOKSDIR="${R11K_HOOKSDIR-${DEFAULT_HOOKSDIR}}"
+INCLUDES=("${CMD_INCLUDES[@]:-${R11K_INCLUDES[@]:-}}")
+
+if [ $# -gt 0 ]; then
+	REPO="${1}"
+	shift
 fi
 
-REPO="${1:-.}"
-BASEDIR="${2:-environments}"
-CACHEDIR="${3:-${BASEDIR}/.cache}"
-HOOKSDIR="${4:-/etc/r11k/hooks.d}"
-CHANGE_COUNTER=0
-
-LOCKFILE="${BASEDIR}/.lock"
-if ( set -o noclobber; echo "$$" > "$LOCKFILE") 2> /dev/null; then
-	SCRATCH="$( mktemp -d 2>/dev/null || mktemp -d -t 'r11k' )"
-	function cleanup {
-		rm -rf "$SCRATCH"
-		rm "$LOCKFILE"
-	}
-	trap cleanup EXIT
-else
-	echo "Could not create \`${LOCKFILE}\`. Not running."
-	exit 75 # TEMPERR
+if [ $# -gt 0 ]; then
+	echo "Unknown argument(s) left; aborting: $@" >&2
+	exit 64
 fi
 
 exec 3>&1 # So we can output to stdout from within backticks
 
 function ensure_directory {
-	if [ -e "$1" -a ! -d "$1" ]; then
-		echo "\`$1\` already exists but is not a directory"
-		exit 65 # EX_DATAERR
-	elif [ ! -e "$1" ]; then
-		mkdir -p "$1"
-	fi
+	while [ ! -d "$1" ]; do
+		if [ -e "$1" -a ! -d "$1" ]; then
+			echo "\`$1\` already exists but is not a directory"
+			exit 65 # EX_DATAERR
+		elif [ ! -e "$1" ]; then
+			# Possible race condition here, hence the `||true` and the while-loop
+			mkdir -p "$1" || true
+		fi
+	done
 }
 
 function escape_repo {
@@ -73,7 +133,24 @@ function git_mirror {
 	fi
 }
 
+# We need to acquire a lock as soon as possible, but we need to create our
+# $BASEDIR first.
+
 ensure_directory "$BASEDIR"
+
+LOCKFILE="${BASEDIR}/.lock"
+if ( set -o noclobber; echo "$$" > "$LOCKFILE") 2> /dev/null; then
+	SCRATCH="$( mktemp -d 2>/dev/null || mktemp -d -t 'r11k' )"
+	function cleanup {
+		rm -rf "$SCRATCH"
+		rm "$LOCKFILE"
+	}
+	trap cleanup EXIT
+else
+	echo "Could not create \`${LOCKFILE}\`. Not running."
+	exit 75 # TEMPERR
+fi
+
 ensure_directory "$CACHEDIR"
 
 CACHEDIR="$( cd "$CACHEDIR"; pwd )" # make absolute path
@@ -111,6 +188,8 @@ function do_submodules {
 		)
 	done
 }
+
+CHANGE_COUNTER=0
 
 while read branch; do
 	branch_envname="$(sed -e 's/\//__/g' <<<"$branch")"
@@ -162,4 +241,5 @@ if [ -d $HOOKSDIR ]; then
 else
 	echo "HOOKSDIR ${HOOKSDIR} not found"
 fi
+
 # vim: set ts=4 sw=2 tw=0 noet :
