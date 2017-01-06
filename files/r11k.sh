@@ -112,24 +112,24 @@ function escape_repo {
 }
 
 function git_mirror {
-	REPO="$1"
-	EREPO="$( escape_repo "$REPO" )"
-	if [ ! -d "$CACHEDIR/$EREPO" ]; then
-		if ! git clone --mirror "$REPO" "$CACHEDIR/$EREPO"; then
+	local repo="$1"
+	local erepo="$( escape_repo "$repo" )"
+	if [ ! -d "$CACHEDIR/$erepo" ]; then
+		if ! git clone --mirror "$repo" "$CACHEDIR/$erepo"; then
 			return 1
 		fi
 	fi
-	echo "$CACHEDIR/$EREPO"
+	echo "$CACHEDIR/$erepo"
 	touch "$SCRATCH/refreshed"
-	if ! grep -q "$EREPO" "$SCRATCH/refreshed"; then
-		echo "Updating $REPO" >&3
+	if ! grep -q "$erepo" "$SCRATCH/refreshed"; then
+		echo "Updating $repo" >&3
 		(
-			cd "$CACHEDIR/$EREPO"
+			cd "$CACHEDIR/$erepo"
 			if ! git remote update --prune >/dev/null; then
 				return 1
 			fi
 		)
-		echo "$EREPO" >> "$SCRATCH/refreshed"
+		echo "$erepo" >> "$SCRATCH/refreshed"
 	fi
 }
 
@@ -169,23 +169,26 @@ else
 	FONT_NORMAL=""
 fi
 
-function do_submodules {
+function do_submodules() {
+	local branch="$1"
+	local url lmirror mod
 	git submodule init
 	git submodule sync >/dev/null
 	git submodule | awk '{print $2}' | while read mod; do
 		echo "${FONT_GREEN}Checking out submodule ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}${FONT_GREEN}/${mod}${FONT_NORMAL}"
 
-		URL="$( git config --get "submodule.${mod}.url" )"
-		LOCAL="$( git_mirror "${URL}" )"
+		url="$( git config --get "submodule.${mod}.url" )"
+		lmirror="$( git_mirror "${url}" )"
 		if [ $? -ne 0 ]; then
 			return 1
 		fi
 
-		git submodule update --reference "${LOCAL}" "${mod}"
-		(
-			cd "${mod}"
-			#do_submodules # recurse down
-		)
+		git submodule update --reference "${lmirror}" "${mod}"
+		## TODO: Recursive checkout.
+		#
+		# 	cd "${mod}"
+		#	do_submodules # recurse down
+		#)
 	done
 }
 
