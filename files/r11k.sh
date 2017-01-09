@@ -192,10 +192,9 @@ function do_submodules() {
 	done
 }
 
-CHANGE_COUNTER=0
-
-while read branch; do
-	branch_envname="$(sed -e 's/\//__/g' <<<"$branch")"
+function do_submodules_for_branch() {
+	local branch="$1"
+	local branch_envname="$(sed -e 's/\//__/g' <<<"$branch")"
 	echo "$branch_envname" >> "$SCRATCH/branches"
 	echo "${FONT_GREEN_BOLD}Checking out branch ${branch} into ${branch_envname}${FONT_NORMAL}"
 
@@ -217,14 +216,42 @@ while read branch; do
 		git remote set-url origin "$MASTER_GIT_DIR"
 		git fetch origin "$branch"
 		git reset --hard "origin/$branch"
-		if ! do_submodules; then
+		if ! do_submodules $branch; then
 			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
 			cd "${BASEDIR}"
 			rm -rf "${branch_envname}"
 		fi
 	)
-done < <(GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads | sed 's%.\{40\} refs/heads/%%')
+}
 
+function collect_branches() {
+	local includes
+	local tmpfilter="${SCRATCH}/filter_branches.txt"
+	if [ ${#INCLUDES} -eq 0 ]; then
+		GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads | sed 's%.\{40\} refs/heads/%%'
+	else
+		for include in "${INCLUDES[@]}"; do
+			GIT_DIR="$MASTER_GIT_DIR" git show-ref --heads | sed 's%.\{40\} refs/heads/%%' | \
+				{ grep -e "^${include}\$" || true; } >> "$tmpfilter"
+		done
+		cat "${tmpfilter}" | sort -u
+	fi
+}
+
+BRANCHES=( "$( collect_branches )" );
+CHANGE_COUNTER=0
+
+if [ ${#BRANCHES} -eq 0 ]; then
+	echo "No branches found to checkout"
+	exit 66;
+fi;
+
+# Map branches to environments
+while read branch; do
+	do_submodules_for_branch "$branch"
+done <<<"${BRANCHES[@]}"
+
+# Cleanup old environments
 while read dir; do
 	if ! grep -q "$dir" "$SCRATCH/branches"; then
 		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
@@ -242,7 +269,7 @@ if [ -d $HOOKSDIR ]; then
 	done
   fi
 else
-	echo "HOOKSDIR ${HOOKSDIR} not found"
+	echo "WARNING: HOOKSDIR ${HOOKSDIR} not found"
 fi
 
 # vim: set ts=4 sw=2 tw=0 noet :
