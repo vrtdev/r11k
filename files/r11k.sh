@@ -191,10 +191,13 @@ function do_submodules() {
 		#)
 	done
 }
+function translate_branch_to_env() {
+	echo -n "$1" | perl -pe 's@/@__@g;s@([^a-zA-Z0-9_-])@sprintf "_%02x", ord($1)@ge;'
+}
 
 function do_submodules_for_branch() {
 	local branch="$1"
-	local branch_envname="$(sed -e 's/\//__/g' <<<"$branch")"
+	local branch_envname="$(translate_branch_to_env "$branch")"
 	echo "$branch_envname" >> "$SCRATCH/branches"
 	echo "${FONT_GREEN_BOLD}Checking out branch ${branch} into ${branch_envname}${FONT_NORMAL}"
 
