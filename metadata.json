@@ -1,6 +1,6 @@
 {
   "name":"dpcops-r11k",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "author": "dpcops",
   "summary": "Manages git to puppet-environment mapping",
   "license": "proprietary",
