@@ -61,34 +61,34 @@ describe 'r11k::cron' do
     let (:title) { 'default' }
     let (:default_params) { { 'git_base_repo' => '/local'} }
     {
-      '--basedir /etc/puppetlabs/code/environments --hooksdir /etc/r11k/hooks.d' => {
+      '--basedir /etc/puppetlabs/code/environments --no-wait --hooksdir /etc/r11k/hooks.d' => {
         # use all defaults.
       },
-      '--basedir /environments --hooksdir /etc/r11k/hooks.d' => {
+      '--basedir /environments --no-wait --hooksdir /etc/r11k/hooks.d' => {
         'basedir' => '/environments',
       },
-      '--basedir /environments --cachedir /tmp/cache --hooksdir /etc/r11k/hooks.d' => {
+      '--basedir /environments --no-wait --cachedir /tmp/cache --hooksdir /etc/r11k/hooks.d' => {
         'basedir'  => '/environments',
         'cachedir' => '/tmp/cache',
       },
-      '--basedir /environments --cachedir /tmp/cache --hooksdir /etc/hooksdir' => {
+      '--basedir /environments --no-wait --cachedir /tmp/cache --hooksdir /etc/hooksdir' => {
         'basedir' => '/environments',
         'cachedir' => '/tmp/cache',
         'hooksdir' => '/etc/hooksdir',
       },
-      '--basedir /environments --hooksdir /etc/hooksdir' => {
+      '--basedir /environments --no-wait --hooksdir /etc/hooksdir' => {
         'basedir' => '/environments',
         'hooksdir' => '/etc/hooksdir',
       },
-      '--basedir /environments --hooksdir /etc/r11k/hooks.d --include production' => {
+      '--basedir /environments --no-wait --hooksdir /etc/r11k/hooks.d --include production' => {
         'basedir' => '/environments',
         'includes' => 'production',
       },
-      '--basedir /environments --hooksdir /etc/r11k/hooks.d --include production:puppet/.\\*' => {
+      '--basedir /environments --no-wait --hooksdir /etc/r11k/hooks.d --include production:puppet/.\\*' => {
         'basedir' => '/environments',
         'includes' => ['production','puppet/.*'],
       },
-      '--basedir /path\\ with/spaces/ --hooksdir /etc/r11k/hooks.d' => {
+      '--basedir /path\\ with/spaces/ --no-wait --hooksdir /etc/r11k/hooks.d' => {
         'basedir' => '/path with/spaces/',
       },
     }.each do |cmd, params|

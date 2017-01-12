@@ -17,7 +17,7 @@ define r11k::cron (
 ) {
 
   $r11k_location = $::r11k::install_location
-  $cmd_basedir = ['--basedir', $basedir]
+  $cmd_basedir = ['--basedir', $basedir, '--no-wait']
 
   $cmd_cachedir = $cachedir ? {
     undef   => [],
