@@ -1,0 +1,6 @@
+---
+fixtures:
+  symlinks:
+    r11k: '#{source_dir}'
+  repositories:
+    stdlib: 'git://github.com/puppetlabs/puppetlabs-stdlib'
