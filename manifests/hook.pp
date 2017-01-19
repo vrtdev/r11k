@@ -12,6 +12,7 @@
 #          to use for your r11k_hook
 # @param config_content Content that gets printed inside the config file.
 # @param config_source Source of the config file to provision.
+# @param config_umask Override the default umask (0600) for the configuration file.
 define r11k::hook (
   Enum['present','absent']       $ensure            = 'present',
   Optional[String]               $hook_content      = undef,
@@ -21,6 +22,7 @@ define r11k::hook (
   Optional[Stdlib::Absolutepath] $config_file       = undef,
   Optional[String]               $config_content    = undef,
   Optional[String]               $config_source     = undef,
+  Optional[String]               $config_umask      = '0600',
 ){
 
   $real_hooks_dir = $hook_dir ? {
@@ -65,6 +67,7 @@ define r11k::hook (
   if $config_file {
     file { $config_file:
       ensure  => $file_ensure,
+      mode    => $config_umask,
       content => $config_content,
       source  => $config_source,
       before  => File["${real_hooks_dir}/${name}"],
