@@ -219,6 +219,7 @@ function do_submodules_for_branch() {
 		git remote set-url origin "$MASTER_GIT_DIR"
 		git fetch origin "$branch"
 		git reset --hard "origin/$branch"
+		git clean -ffdx
 		if ! do_submodules $branch; then
 			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
 			cd "${BASEDIR}"
