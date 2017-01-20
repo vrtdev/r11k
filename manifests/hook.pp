@@ -1,6 +1,6 @@
 # Install a hook to run after something changed on a r11k run
 #
-# @param ensure 'present' or 'absent'. Defaults to 'present'.
+# @param ensure Value can be either 'present' or 'absent'. Defaults to 'present'.
 # @param hook_source String indicating the source of the hookfile.
 # @param hook_content Content of the hook script.
 # @param hook_dir String indicating the folder where the hooks are located
