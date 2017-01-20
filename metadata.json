@@ -1,6 +1,6 @@
 {
-  "name":"dpcops-r11k",
-  "version": "1.0.2",
+  "name": "dpcops-r11k",
+  "version": "1.0.3",
   "author": "dpcops",
   "summary": "Manages git to puppet-environment mapping",
   "license": "proprietary",
@@ -8,7 +8,10 @@
   "project_page": null,
   "issues_url": null,
   "dependencies": [
-    {"name":"puppetlabs-stdlib","version_requirement":">= 4.13.1 < 5.0.0"}
+    {
+      "name": "puppetlabs-stdlib",
+      "version_requirement": ">= 4.13.1 < 5.0.0"
+    }
   ],
   "requirements": [
     {
