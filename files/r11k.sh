@@ -206,6 +206,7 @@ function translate_branch_to_env() {
 function do_submodules_for_branch() {
 	local branch="$1"
 	local branch_envname="$(translate_branch_to_env "$branch")"
+	local new_branch='false'
 	echo "$branch_envname" >> "$SCRATCH/branches"
 	echo "${FONT_GREEN_BOLD}Checking out branch ${branch} into ${branch_envname}${FONT_NORMAL}"
 
@@ -221,17 +222,25 @@ function do_submodules_for_branch() {
 		git clone --reference "$MASTER_GIT_DIR" --shared \
 			-b "$branch" "$MASTER_GIT_DIR" "$BASEDIR/$branch_envname"
 		let CHANGE_COUNTER+=1
+		new_branch='true'
 	fi
 	(
 		cd "${BASEDIR}/${branch_envname}"
-		git remote set-url origin "$MASTER_GIT_DIR"
-		git fetch origin "$branch"
-		git reset --hard "origin/$branch"
-		git clean -ffdx
-		if ! do_submodules $branch; then
-			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
-			cd "${BASEDIR}"
-			rm -rf "${branch_envname}"
+		git remote set-url origin "${MASTER_GIT_DIR}"
+		git remote update
+		if git status -uno | grep -q -i 'Your branch is up-to-date' && [[ ${new_branch} == 'false' ]]
+		then
+			echo "${FONT_GREEN}Branch has no changes. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
+		else
+			echo "${FONT_GREEN}Branch is new or has changes! Updating. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
+			git fetch origin "$branch"
+			git reset --hard "origin/$branch"
+			git clean -ffdx
+			if ! do_submodules $branch; then
+				echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
+				cd "${BASEDIR}"
+				rm -rf "${branch_envname}"
+			fi
 		fi
 	)
 }
