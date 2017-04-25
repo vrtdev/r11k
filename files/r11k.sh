@@ -50,6 +50,14 @@ ENVIRONMENT:
 EOHELP
 }
 
+## getopt parsing
+if `getopt -T >/dev/null 2>&1`; [ $? = 4 ]; then
+  true # Enhanced getopt.
+else
+  echo "Could not find an enhanced \`getopt\`. You have $(getopt -V)"
+  exit 69 # EX_UNABAILABLE
+fi
+
 ## No options = show help + exit EX_USAGE
 if GETOPT_TEMP="$( getopt --shell bash --name "$0" \
 	-o b:c:k:i:hw \
