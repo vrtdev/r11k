@@ -274,7 +274,7 @@ done <<<"${BRANCHES[@]}"
 
 # Cleanup old environments
 while read dir; do
-	if ! grep -q "$dir" "$SCRATCH/branches"; then
+	if ! grep -q "${dir}$" "$SCRATCH/branches"; then
 		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
 		rm -rf "$BASEDIR/$dir"
 		let CHANGE_COUNTER+=1
