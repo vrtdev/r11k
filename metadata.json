@@ -3,7 +3,7 @@
   "version": "1.0.8",
   "author": "dpcops",
   "summary": "Manages git to puppet-environment mapping",
-  "license": "proprietary",
+  "license": "Apache",
   "source": "ssh://git@atlas.vrt.be:7999/pup/dpcops-r11k.git",
   "project_page": null,
   "issues_url": null,

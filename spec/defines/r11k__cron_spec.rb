@@ -1,8 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe 'r11k::cron' do
   let(:pre_condition) { 'include r11k' }
-  context 'defaults' do
+
+  context 'with defaults' do
     let(:title) { 'default' }
     let(:params) { { 'git_base_repo' => '/path/to/repo' } }
 
@@ -11,14 +14,17 @@ describe 'r11k::cron' do
                                                               'minute' => '*/4')
     end
   end
-  context 'ensure => absent' do
+
+  context 'with ensure => absent' do
     let(:title) { 'default' }
     let(:params) { { 'ensure' => 'absent', 'git_base_repo' => '' } }
+
     it do
       is_expected.to contain_cron('r11k::cron: default').with('ensure' => 'absent')
     end
   end
-  context 'advanced schedule' do
+
+  context 'with advanced schedule' do
     let(:title) { 'advanced' }
     let(:params) do
       {
@@ -35,7 +41,8 @@ describe 'r11k::cron' do
                                                                'hour' => ['2-4'])
     end
   end
-  context 'allowed branch include parameter' do
+
+  context 'with allowed branch include parameter' do
     [
       'production',
       nil,
@@ -49,17 +56,20 @@ describe 'r11k::cron' do
             'includes' => incl
           }
         end
+
         it do
           is_expected.to contain_cron('r11k::cron: default')
         end
       end
     end
   end
-  context 'r11k command line' do
-    let(:prefix) { %w(/usr/local/bin/r11k) }
-    let(:suffix) { %w(/local) }
+
+  context 'with r11k command line' do
+    let(:prefix) { %w[/usr/local/bin/r11k] }
+    let(:suffix) { %w[/local] }
     let(:title) { 'default' }
     let(:default_params) { { 'git_base_repo' => '/local' } }
+
     {
       '--basedir /etc/puppetlabs/code/environments --no-wait --hooksdir /etc/r11k/hooks.d' => {
         # use all defaults.
@@ -68,7 +78,7 @@ describe 'r11k::cron' do
         'basedir' => '/environments'
       },
       '--basedir /environments --no-wait --cachedir /tmp/cache --hooksdir /etc/r11k/hooks.d' => {
-        'basedir'  => '/environments',
+        'basedir' => '/environments',
         'cachedir' => '/tmp/cache'
       },
       '--basedir /environments --no-wait --cachedir /tmp/cache --hooksdir /etc/hooksdir' => {
@@ -94,6 +104,7 @@ describe 'r11k::cron' do
     }.each do |cmd, params|
       describe "expected result command: '#{cmd}'" do
         let(:params) { default_params.merge(params) }
+
         it 'matches' do
           is_expected.to contain_cron('r11k::cron: default').with_command([prefix, cmd, suffix].join(' '))
         end

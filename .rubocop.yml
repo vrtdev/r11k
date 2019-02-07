@@ -1,6 +1,6 @@
 require: rubocop-rspec
 AllCops:
-  TargetRubyVersion: 1.9
+  TargetRubyVersion: 2.4
   Include:
     - '**/*.rb'
     - 'Rakefile'
@@ -35,7 +35,7 @@ Metrics/CyclomaticComplexity:
 Style/Documentation:
   Enabled: False
 
-Style/DotPosition:
+Layout/DotPosition:
   EnforcedStyle: trailing
 
 # Configuration parameters: AllowURI, URISchemes.
@@ -58,7 +58,7 @@ Metrics/AbcSize:
 Metrics/PerceivedComplexity:
   Enabled: False
 
-Style/ClosingParenthesisIndentation:
+Layout/ClosingParenthesisIndentation:
   Enabled: False
 
 # RSpec
