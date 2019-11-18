@@ -200,7 +200,7 @@ function do_submodules() {
 	done
 }
 function translate_branch_to_env() {
-	echo -n "$1" | perl -pe 's@/@__@g;s@([^a-zA-Z0-9_-])@sprintf "_%02x", ord($1)@ge;'
+	echo -n "$1" | perl -pe 's@/@__@g;s@([^a-zA-Z0-9_])@sprintf "_%02x", ord($1)@ge;'
 }
 
 function do_submodules_for_branch() {
