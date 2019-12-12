@@ -228,7 +228,7 @@ function do_submodules_for_branch() {
 		cd "${BASEDIR}/${branch_envname}"
 		git remote set-url origin "${MASTER_GIT_DIR}"
 		git remote update
-		if git status -uno | grep -q -i 'Your branch is up-to-date' && [[ ${new_branch} == 'false' ]]
+		if [[ -z "$(git status --porcelain -uno)" ]] && [[ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/${branch}")" ]] && [[ ${new_branch} == 'false' ]]
 		then
 			echo "${FONT_GREEN}Branch has no changes. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
 		else
