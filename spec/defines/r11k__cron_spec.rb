@@ -110,5 +110,26 @@ describe 'r11k::cron' do
         end
       end
     end
+
+    describe "with prefix/suffix" do
+      let(:params) do
+        default_params.merge(
+          command_prefix: '/usr/local/bin/wrapper',
+          command_suffix: '2>&1',
+          includes: ['production', 'puppet/.*']
+        )
+      end
+      it 'does not escape prefix/suffix' do
+        is_expected.to contain_cron('r11k::cron: default').with_command(
+          [ '/usr/local/bin/wrapper',
+            '/usr/local/bin/r11k --basedir /etc/puppetlabs/code/environments --no-wait --hooksdir /etc/r11k/hooks.d',
+            '--include production:puppet/.\\*',
+            '/local',
+            '2>&1',
+          ].join(' ')
+        )
+      end
+    end
+
   end
 end
