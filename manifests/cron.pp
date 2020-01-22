@@ -5,8 +5,8 @@
 # @param basedir puppet environments folder location. Defaults to 'this' puppet-server's setting.
 # @param cachedir Custom cache dir to use. Defaults to no setting and uses whatever default the script has.
 # @param hooksdir Custom hooks dir to use. Defaults to `r11k::default_hooks_dir`.
-# @param command_prefix Custom string to prefix the command with.
-# @param command_suffix Custom string to suffix the command with.
+# @param command_prefix Custom string to prefix the command with. This should be shell safe!
+# @param command_suffix Custom string to suffix the command with. This should be shell safe!
 # @param job A hash with cron settings passed through to the cronjob.
 # @param includes Array (or single String) with regex filters with branches to convert to environments.
 define r11k::cron (
@@ -48,20 +48,18 @@ define r11k::cron (
   }
 
   $command_array = flatten([
-    $command_prefix,
     $r11k_location,
     $cmd_basedir,
     $cmd_cachedir,
     $cmd_hooksdir,
     $cmd_includes,
     $git_base_repo,
-    $command_suffix,
   ]).filter |$val| { $val =~ NotUndef }
-
+  $safe_command = shell_join($command_array)
 
   cron {"r11k::cron: ${name}":
     ensure  => $ensure,
-    command => shell_join($command_array),
+    command => "${command_prefix} ${safe_command} ${command_suffix}".strip(),
     require => File[$r11k_location],
     *       => $job,
   }
