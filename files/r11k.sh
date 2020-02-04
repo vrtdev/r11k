@@ -11,6 +11,7 @@ set -o nounset # exit on use of undeclared var
 DEFAULT_REPO="."
 DEFAULT_BASEDIR="environments"
 DEFAULT_HOOKSDIR="/etc/r11k/hooks.d"
+DEFAULT_ENVHOOKSDIR="/etc/r11k/env.hooks.d"
 
 LOCK="fail"
 
@@ -20,32 +21,37 @@ USAGE: $0 [options] [repo]
 
 ARGUMENTS:
 
-    [repo]          Clone of the git repo to map in the basedir.
-                    Defaults to \`${DEFAULT_REPO}\`
+    [repo]            Clone of the git repo to map in the basedir.
+                      Defaults to \`${DEFAULT_REPO}\`
 
 OPTIONS:
 
-    -b,--basedir    Target base directory.
-                    Defaults: \`${DEFAULT_BASEDIR}\`
-    -c,--cachedir   Directory to use for caching the git repositories
-                    (Including the found submodules).
-                    Defaults to a subfolder \`.cache\` in the basedir.
-    -k,--hooksdir   Directory with hooks to run after the deploy was executed.
-                    Default: \`${DEFAULT_HOOKSDIR}\`
-    -i,--include    Branch or regex of branches to map. You can repeat this
-                    option to include multiple branches/filters or provide
-                    a list separated by colon \`:\`.  Defaults to
-                    all found branches in the repository.
-    -h,--help       Display this message and exit.
-    -w,--no-wait    Don't wait for another r11k run to finish, but fail
-                    immediately if another run is detected.
+    -b,--basedir      Target base directory.
+                      Defaults: \`${DEFAULT_BASEDIR}\`
+    -c,--cachedir     Directory to use for caching the git repositories
+                      (Including the found submodules).
+                      Defaults to a subfolder \`.cache\` in the basedir.
+    -k,--hooksdir     Directory with hooks to run after all branches have been
+                      deployed.
+                      Default: \`${DEFAULT_HOOKSDIR}\`
+    -e,--envhooksdir  Directory with hooks to run after an environment had
+                      any changes.
+                      Default: \`${DEFAULT_ENVHOOKSDIR}\`
+    -i,--include      Branch or regex of branches to map. You can repeat this
+                      option to include multiple branches/filters or provide
+                      a list separated by colon \`:\`.  Defaults to
+                      all found branches in the repository.
+    -h,--help         Display this message and exit.
+    -w,--no-wait      Don't wait for another r11k run to finish, but fail
+                      immediately if another run is detected.
 
 ENVIRONMENT:
 
-    R11K_BASEDIR    Sets the default basedir to use.
-    R11K_CACHEDIR   Sets the default cache dir to use.
-    R11K_HOOKSDIR   Sets the default hooks dir to use.
-    R11K_INCLUDES   A colon separated list with branches/filters to use.
+    R11K_BASEDIR      Sets the default basedir to use.
+    R11K_CACHEDIR     Sets the default cache dir to use.
+    R11K_HOOKSDIR     Sets the default hooks dir to use.
+    R11K_ENVHOOKSDIR  Sets the default environments hooks dir to use.
+    R11K_INCLUDES     A colon separated list with branches/filters to use.
 
 EOHELP
 }
@@ -60,8 +66,8 @@ fi
 
 ## No options = show help + exit EX_USAGE
 if GETOPT_TEMP="$( getopt --shell bash --name "$0" \
-	-o b:c:k:i:hw \
-	-l basedir:,cachedir:,hooksdir:,include:,help,no-wait \
+	-o b:c:k:e:i:hw \
+	-l basedir:,cachedir:,hooksdir:,envhooksdir:,include:,help,no-wait \
 	-- "$@" )"; then
 	eval set -- "${GETOPT_TEMP}"
 else
@@ -74,6 +80,7 @@ while [ $# -gt 0 ]; do
 		-b|--basedir)   R11K_BASEDIR="${2}"; shift 2;;
 		-c|--cachedir)  R11K_CACHEDIR="${2}"; shift 2;;
 		-k|--hooksdir)  R11K_HOOKSDIR="${2}"; shift 2;;
+		-e|--envhooksdir) R11K_ENVHOOKSDIR="${2}"; shift 2;;
 		-i|--include)   IFS=: read -ra NEW_INCLUDES <<<"${2}"
 		                CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
 		                shift 2;;
@@ -89,6 +96,7 @@ BASEDIR="${R11K_BASEDIR-${DEFAULT_BASEDIR}}"
 DEFAULT_CACHEDIR="${BASEDIR}/.cache"
 CACHEDIR="${R11K_CACHEDIR-${DEFAULT_CACHEDIR}}"
 HOOKSDIR="${R11K_HOOKSDIR-${DEFAULT_HOOKSDIR}}"
+ENVHOOKSDIR="${R11K_ENVHOOKSDIR-${DEFAULT_ENVHOOKSDIR}}"
 INCLUDES=("${CMD_INCLUDES[@]:-${R11K_INCLUDES[@]:-}}")
 
 if [ $# -gt 0 ]; then
@@ -265,8 +273,15 @@ function run_hooks() {
 	local args="${@}"
 	[ -d "${hookdir}" ] || return
 	for SCRIPT in `ls "${hookdir}"`; do
-		if [ -x ${HOOKSDIR}/${SCRIPT} ]; then
-			${HOOKSDIR}/${SCRIPT} "${args[@]}"
+		if [ -x ${hookdir}/${SCRIPT} ]; then
+			set +e
+			${hookdir}/${SCRIPT} "${args[@]}"
+			exitcode=$?
+			set -e
+			if [ $exitcode -gt 0 ]; then
+				echo "script ${hookdir}/${SCRIPT} failed with exitcode ${exitcode}"
+				exit 1;
+			fi
 		fi
 	done
 }
@@ -280,8 +295,14 @@ if [ ${#BRANCHES} -eq 0 ]; then
 fi;
 
 # Map branches to environments
+PREV_COUNTER="${CHANGE_COUNTER}"
 while read branch; do
 	do_submodules_for_branch "$branch"
+	if [ $PREV_COUNTER -ne $CHANGE_COUNTER ]; then
+		echo "${FONT_GREEN}Running environment hooks ${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
+		run_hooks "${ENVHOOKSDIR}" "$branch" "$( translate_branch_to_env "${branch}" )"
+		PREV_COUNTER="${CHANGE_COUNTER}"
+	fi
 done <<<"${BRANCHES[@]}"
 
 # Cleanup old environments
@@ -296,6 +317,7 @@ done < <(cd "$BASEDIR"; ls -1)
 # if CHANGE_COUNTER > 0, run the all the hooks found in $HOOKSDIR
 if [ -d $HOOKSDIR ]; then
   if [ ${CHANGE_COUNTER} -gt 0 ]; then
+	echo "${FONT_GREEN}Running post-deploy hooks${FONT_NORMAL}"
 	run_hooks "${HOOKSDIR}"
   fi
 else
