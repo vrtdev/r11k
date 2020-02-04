@@ -259,6 +259,18 @@ function collect_branches() {
 	fi
 }
 
+function run_hooks() {
+	local hookdir="$1"
+	shift
+	local args="${@}"
+	[ -d "${hookdir}" ] || return
+	for SCRIPT in `ls "${hookdir}"`; do
+		if [ -x ${HOOKSDIR}/${SCRIPT} ]; then
+			${HOOKSDIR}/${SCRIPT} "${args[@]}"
+		fi
+	done
+}
+
 BRANCHES=( "$( collect_branches )" );
 CHANGE_COUNTER=0
 
@@ -284,10 +296,7 @@ done < <(cd "$BASEDIR"; ls -1)
 # if CHANGE_COUNTER > 0, run the all the hooks found in $HOOKSDIR
 if [ -d $HOOKSDIR ]; then
   if [ ${CHANGE_COUNTER} -gt 0 ]; then
-	for SCRIPT in `ls ${HOOKSDIR}`; do
-		# run script
-		${HOOKSDIR}/${SCRIPT}
-	done
+	run_hooks "${HOOKSDIR}"
   fi
 else
 	echo "WARNING: HOOKSDIR ${HOOKSDIR} not found"
