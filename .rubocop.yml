@@ -35,8 +35,15 @@ Metrics/CyclomaticComplexity:
 Style/Documentation:
   Enabled: False
 
-Layout/DotPosition:
-  EnforcedStyle: trailing
+Style/TrailingCommaInLiteral:
+  Description: Prefer always trailing comma on multiline literals. This makes diffs,
+    and re-ordering nicer.
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArguments:
+  Description: Prefer always trailing comma on multiline argument lists. This makes
+    diffs, and re-ordering nicer.
+  EnforcedStyleForMultiline: comma
 
 # Configuration parameters: AllowURI, URISchemes.
 Metrics/LineLength:

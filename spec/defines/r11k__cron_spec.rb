@@ -31,8 +31,8 @@ describe 'r11k::cron' do
         'git_base_repo' => '/path/to/repo',
         'job' => {
           'minute' => '*/10',
-          'hour' => ['2-4']
-        }
+          'hour' => ['2-4'],
+        },
       }
     end
 
@@ -46,14 +46,14 @@ describe 'r11k::cron' do
     [
       'production',
       nil,
-      ['production', 'features/.*']
+      ['production', 'features/.*'],
     ].each do |incl|
       describe "includes is a #{incl.class}" do
         let(:title) { 'default' }
         let(:params) do
           {
             'git_base_repo' => '/path/to/repo',
-            'includes' => incl
+            'includes' => incl,
           }
         end
 
@@ -65,8 +65,8 @@ describe 'r11k::cron' do
   end
 
   context 'with r11k command line' do
-    let(:prefix) { %w[/usr/local/bin/r11k] }
-    let(:suffix) { %w[/local] }
+    let(:prefix) { ['/usr/local/bin/r11k'] }
+    let(:suffix) { ['/local'] }
     let(:title) { 'default' }
     let(:default_params) { { 'git_base_repo' => '/local' } }
 
@@ -75,32 +75,32 @@ describe 'r11k::cron' do
         # use all defaults.
       },
       '--basedir /environments --no-wait --hooksdir /etc/r11k/hooks.d' => {
-        'basedir' => '/environments'
+        'basedir' => '/environments',
       },
       '--basedir /environments --no-wait --cachedir /tmp/cache --hooksdir /etc/r11k/hooks.d' => {
         'basedir' => '/environments',
-        'cachedir' => '/tmp/cache'
+        'cachedir' => '/tmp/cache',
       },
       '--basedir /environments --no-wait --cachedir /tmp/cache --hooksdir /etc/hooksdir' => {
         'basedir' => '/environments',
         'cachedir' => '/tmp/cache',
-        'hooksdir' => '/etc/hooksdir'
+        'hooksdir' => '/etc/hooksdir',
       },
       '--basedir /environments --no-wait --hooksdir /etc/hooksdir' => {
         'basedir' => '/environments',
-        'hooksdir' => '/etc/hooksdir'
+        'hooksdir' => '/etc/hooksdir',
       },
       '--basedir /environments --no-wait --hooksdir /etc/r11k/hooks.d --include production' => {
         'basedir' => '/environments',
-        'includes' => 'production'
+        'includes' => 'production',
       },
       '--basedir /environments --no-wait --hooksdir /etc/r11k/hooks.d --include production:puppet/.\\*' => {
         'basedir' => '/environments',
-        'includes' => ['production', 'puppet/.*']
+        'includes' => ['production', 'puppet/.*'],
       },
       '--basedir /path\\ with/spaces/ --no-wait --hooksdir /etc/r11k/hooks.d' => {
-        'basedir' => '/path with/spaces/'
-      }
+        'basedir' => '/path with/spaces/',
+      },
     }.each do |cmd, params|
       describe "expected result command: '#{cmd}'" do
         let(:params) { default_params.merge(params) }
@@ -111,25 +111,24 @@ describe 'r11k::cron' do
       end
     end
 
-    describe "with prefix/suffix" do
+    describe 'with prefix/suffix' do
       let(:params) do
         default_params.merge(
           command_prefix: '/usr/local/bin/wrapper',
           command_suffix: '2>&1',
-          includes: ['production', 'puppet/.*']
+          includes: ['production', 'puppet/.*'],
         )
       end
+
       it 'does not escape prefix/suffix' do
         is_expected.to contain_cron('r11k::cron: default').with_command(
-          [ '/usr/local/bin/wrapper',
-            '/usr/local/bin/r11k --basedir /etc/puppetlabs/code/environments --no-wait --hooksdir /etc/r11k/hooks.d',
-            '--include production:puppet/.\\*',
-            '/local',
-            '2>&1',
-          ].join(' ')
+          ['/usr/local/bin/wrapper',
+           '/usr/local/bin/r11k --basedir /etc/puppetlabs/code/environments --no-wait --hooksdir /etc/r11k/hooks.d',
+           '--include production:puppet/.\\*',
+           '/local',
+           '2>&1'].join(' '),
         )
       end
     end
-
   end
 end

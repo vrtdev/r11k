@@ -18,8 +18,9 @@ class r11k (
   # These are the default directories used in r11k::hook. Make sure they
   # exist to prevent a dependency / recursive directory creation mess
   $default_hooks_dir = '/etc/r11k/hooks.d'
+  $default_env_hooks_dir = '/etc/r11k/env.hooks.d'
 
-  file {['/etc/r11k','/etc/r11k/hooks.d','/etc/r11k/config']:
+  file {['/etc/r11k','/etc/r11k/hooks.d', '/etc/r11k/env.hooks.d', '/etc/r11k/config']:
     ensure => 'directory',
     mode   => '0755',
   }

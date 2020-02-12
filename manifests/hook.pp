@@ -15,6 +15,7 @@
 # @param config_umask Override the default umask (0600) for the configuration file.
 define r11k::hook (
   Enum['present','absent']       $ensure            = 'present',
+  Boolean                        $env_hook          = false,
   Optional[String]               $hook_content      = undef,
   Optional[String]               $hook_source       = undef,
   Optional[String]               $hook_dir          = undef,
@@ -26,7 +27,10 @@ define r11k::hook (
 ){
 
   $real_hooks_dir = $hook_dir ? {
-    undef   => $::r11k::default_hooks_dir,
+    undef   => $env_hook ? {
+      true    => $::r11k::default_env_hooks_dir,
+      default => $::r11k::default_hooks_dir,
+    },
     default => $hook_dir,
   }
 
