@@ -276,7 +276,7 @@ function run_hooks() {
 	for SCRIPT in `ls "${hookdir}"`; do
 		if [ -x ${hookdir}/${SCRIPT} ]; then
 			set +e
-			${hookdir}/${SCRIPT} "${args[@]}"
+			${hookdir}/${SCRIPT} ${args[@]}
 			exitcode=$?
 			set -e
 			if [ $exitcode -gt 0 ]; then
