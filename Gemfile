@@ -25,7 +25,7 @@ group :development, :test do
   gem 'puppet-lint' # , '~> 2'
   gem 'puppet-syntax'
   gem 'puppetlabs_spec_helper' # , '>= 1.2.1'
-  gem 'rubocop' # , '~> 0.48.1'
+  gem 'rubocop', '0.49.1' # puppet pdk pins this version
   gem 'rubocop-rspec' # , '~> 1.15'
 end
 group :doc do
