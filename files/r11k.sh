@@ -232,26 +232,24 @@ function do_submodules_for_branch() {
 		let CHANGE_COUNTER+=1
 		new_branch='true'
 	fi
-	(
-		cd "${BASEDIR}/${branch_envname}"
-		git remote set-url origin "${MASTER_GIT_DIR}"
-		git remote update --prune
-		if [[ -z "$(git status --porcelain -uno)" ]] && [[ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/${branch}")" ]] && [[ ${new_branch} == 'false' ]]
-		then
-			echo "${FONT_GREEN}Branch has no changes. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
-		else
-			echo "${FONT_GREEN}Branch is new or has changes! Updating. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
-			git fetch origin "$branch"
-			git reset --hard "origin/$branch"
-			git clean -ffdx
-			if ! do_submodules $branch; then
-				echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
-				cd "${BASEDIR}"
-				rm -rf "${branch_envname}"
-			fi
-			let CHANGE_COUNTER+=1
+	cd "${BASEDIR}/${branch_envname}"
+	git remote set-url origin "${MASTER_GIT_DIR}"
+	git remote update --prune
+	if [[ -z "$(git status --porcelain -uno)" ]] && [[ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/${branch}")" ]] && [[ ${new_branch} == 'false' ]]
+	then
+		echo "${FONT_GREEN}Branch has no changes. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
+	else
+		echo "${FONT_GREEN}Branch is new or has changes! Updating. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
+		git fetch origin "$branch"
+		git reset --hard "origin/$branch"
+		git clean -ffdx
+		if ! do_submodules $branch; then
+			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
+			cd "${BASEDIR}"
+			rm -rf "${branch_envname}"
 		fi
-	)
+		let CHANGE_COUNTER+=1
+	fi
 }
 
 function collect_branches() {
