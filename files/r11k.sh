@@ -242,7 +242,7 @@ function do_submodules_for_branch() {
 		echo "${FONT_GREEN}Branch is new or has changes! Updating. ${FONT_NORMAL}${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
 		git fetch origin "$branch"
 		git reset --hard "origin/$branch"
-		git clean -ffdx
+		git clean -ffdx --exclude='/.resource_types/' # .resource_types is used by puppet to provide environment isolation (puppet generate types)
 		if ! do_submodules $branch; then
 			echo "${FONT_RED}Could not check out branch ${branch}, removing...${FONT_NORMAL}"
 			cd "${BASEDIR}"
