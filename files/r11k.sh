@@ -21,37 +21,40 @@ USAGE: $0 [options] [repo]
 
 ARGUMENTS:
 
-    [repo]            Clone of the git repo to map in the basedir.
-                      Defaults to \`${DEFAULT_REPO}\`
+    [repo]                  Clone of the git repo to map in the basedir.
+                            Defaults to \`${DEFAULT_REPO}\`
 
 OPTIONS:
 
-    -b,--basedir      Target base directory.
-                      Defaults: \`${DEFAULT_BASEDIR}\`
-    -c,--cachedir     Directory to use for caching the git repositories
-                      (Including the found submodules).
-                      Defaults to a subfolder \`.cache\` in the basedir.
-    -k,--hooksdir     Directory with hooks to run after all branches have been
-                      deployed.
-                      Default: \`${DEFAULT_HOOKSDIR}\`
-    -e,--envhooksdir  Directory with hooks to run after an environment had
-                      any changes.
-                      Default: \`${DEFAULT_ENVHOOKSDIR}\`
-    -i,--include      Branch or regex of branches to map. You can repeat this
-                      option to include multiple branches/filters or provide
-                      a list separated by colon \`:\`.  Defaults to
-                      all found branches in the repository.
-    -h,--help         Display this message and exit.
-    -w,--no-wait      Don't wait for another r11k run to finish, but fail
-                      immediately if another run is detected.
+    -b,--basedir            Target base directory.
+                            Defaults: \`${DEFAULT_BASEDIR}\`
+    -c,--cachedir           Directory to use for caching the git repositories
+                            (Including the found submodules).
+                            Defaults to a subfolder \`.cache\` in the basedir.
+    -k,--hooksdir           Directory with hooks to run after all branches have been
+                            deployed.
+                            Default: \`${DEFAULT_HOOKSDIR}\`
+    -e,--envhooksdir        Directory with hooks to run after an environment had
+                            any changes.
+                            Default: \`${DEFAULT_ENVHOOKSDIR}\`
+    -p,--production_branch  Branch name to use as production.
+                            This branch will be created as 'production' environment.
+                            Do NOT include 'production' in --include when using this option.
+    -i,--include            Branch or regex of branches to map. You can repeat this
+                            option to include multiple branches/filters or provide
+                            a list separated by colon \`:\`.  Defaults to
+                            all found branches in the repository.
+    -h,--help               Display this message and exit.
+    -w,--no-wait            Don't wait for another r11k run to finish, but fail
+                            immediately if another run is detected.
 
 ENVIRONMENT:
 
-    R11K_BASEDIR      Sets the default basedir to use.
-    R11K_CACHEDIR     Sets the default cache dir to use.
-    R11K_HOOKSDIR     Sets the default hooks dir to use.
-    R11K_ENVHOOKSDIR  Sets the default environments hooks dir to use.
-    R11K_INCLUDES     A colon separated list with branches/filters to use.
+    R11K_BASEDIR            Sets the default basedir to use.
+    R11K_CACHEDIR           Sets the default cache dir to use.
+    R11K_HOOKSDIR           Sets the default hooks dir to use.
+    R11K_ENVHOOKSDIR        Sets the default environments hooks dir to use.
+    R11K_INCLUDES           A colon separated list with branches/filters to use.
 
 EOHELP
 }
@@ -66,8 +69,8 @@ fi
 
 ## No options = show help + exit EX_USAGE
 if GETOPT_TEMP="$( getopt --shell bash --name "$0" \
-	-o b:c:k:e:i:hw \
-	-l basedir:,cachedir:,hooksdir:,envhooksdir:,include:,help,no-wait \
+	-o b:c:k:e:p:i:hw \
+	-l basedir:,cachedir:,hooksdir:,envhooksdir:,production_branch:,include:,help,no-wait \
 	-- "$@" )"; then
 	eval set -- "${GETOPT_TEMP}"
 else
@@ -77,17 +80,18 @@ fi;
 declare -a CMD_INCLUDES=()
 while [ $# -gt 0 ]; do
 	case "${1}" in
-		-b|--basedir)   R11K_BASEDIR="${2}"; shift 2;;
-		-c|--cachedir)  R11K_CACHEDIR="${2}"; shift 2;;
-		-k|--hooksdir)  R11K_HOOKSDIR="${2}"; shift 2;;
-		-e|--envhooksdir) R11K_ENVHOOKSDIR="${2}"; shift 2;;
-		-i|--include)   IFS=: read -ra NEW_INCLUDES <<<"${2}"
-		                CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
-		                shift 2;;
-		-h|--help)      _help; exit 0;;
-		-w|--no-wait)   LOCK="wait"; shift;;
-		--)             shift; break;;
-		*)              break;;
+		-b|--basedir)           R11K_BASEDIR="${2}"; shift 2;;
+		-c|--cachedir)          R11K_CACHEDIR="${2}"; shift 2;;
+		-k|--hooksdir)          R11K_HOOKSDIR="${2}"; shift 2;;
+		-e|--envhooksdir)       R11K_ENVHOOKSDIR="${2}"; shift 2;;
+        -p|--production_branch) R11K_PRODUCTION_BRANCH="${2}"; shift 2;;
+		-i|--include)           IFS=: read -ra NEW_INCLUDES <<<"${2}"
+		                        CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
+		                        shift 2;;
+		-h|--help)              _help; exit 0;;
+		-w|--no-wait)           LOCK="wait"; shift;;
+		--)                     shift; break;;
+		*)                      break;;
 	esac
 done
 
@@ -124,7 +128,7 @@ function ensure_directory {
 }
 
 function escape_repo {
-	echo -n "$1" | perl -pe 's@([^a-zA-Z0-9-])@sprintf "_%02x", ord($1)@ge;'
+    echo -n "$1" | perl -pe 's@([^a-zA-Z0-9-])@sprintf "_%02x", ord($1)@ge;'
 }
 
 function git_mirror {
@@ -208,7 +212,12 @@ function do_submodules() {
 	done
 }
 function translate_branch_to_env() {
-	echo -n "$1" | perl -pe 's@/@__@g;s@([^a-zA-Z0-9_])@sprintf "_%02x", ord($1)@ge;'
+    if [ -n "${R11K_PRODUCTION_BRANCH}" -a "${1}" == "${R11K_PRODUCTION_BRANCH}" ]
+    then
+        echo 'production'
+    else
+        echo -n "$1" | perl -pe 's@/@__@g;s@([^a-zA-Z0-9_])@sprintf "_%02x", ord($1)@ge;'
+    fi
 }
 
 function do_submodules_for_branch() {
