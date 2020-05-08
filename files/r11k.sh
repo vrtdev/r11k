@@ -79,20 +79,20 @@ fi;
 
 declare -a CMD_INCLUDES=()
 while [ $# -gt 0 ]; do
-	case "${1}" in
-		-b|--basedir)           R11K_BASEDIR="${2}"; shift 2;;
-		-c|--cachedir)          R11K_CACHEDIR="${2}"; shift 2;;
-		-k|--hooksdir)          R11K_HOOKSDIR="${2}"; shift 2;;
-		-e|--envhooksdir)       R11K_ENVHOOKSDIR="${2}"; shift 2;;
+    case "${1}" in
+        -b|--basedir)           R11K_BASEDIR="${2}"; shift 2;;
+        -c|--cachedir)          R11K_CACHEDIR="${2}"; shift 2;;
+        -k|--hooksdir)          R11K_HOOKSDIR="${2}"; shift 2;;
+        -e|--envhooksdir)       R11K_ENVHOOKSDIR="${2}"; shift 2;;
         -p|--production_branch) R11K_PRODUCTION_BRANCH="${2}"; shift 2;;
-		-i|--include)           IFS=: read -ra NEW_INCLUDES <<<"${2}"
-		                        CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
-		                        shift 2;;
-		-h|--help)              _help; exit 0;;
-		-w|--no-wait)           LOCK="wait"; shift;;
-		--)                     shift; break;;
-		*)                      break;;
-	esac
+        -i|--include)           IFS=: read -ra NEW_INCLUDES <<<"${2}"
+                                CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
+                                shift 2;;
+        -h|--help)              _help; exit 0;;
+        -w|--no-wait)           LOCK="wait"; shift;;
+        --)                     shift; break;;
+        *)                      break;;
+    esac
 done
 
 REPO="${R11K_REPO-${DEFAULT_REPO}}"
@@ -128,7 +128,7 @@ function ensure_directory {
 }
 
 function escape_repo {
-    echo -n "$1" | perl -pe 's@([^a-zA-Z0-9-])@sprintf "_%02x", ord($1)@ge;'
+	echo -n "$1" | perl -pe 's@([^a-zA-Z0-9-])@sprintf "_%02x", ord($1)@ge;'
 }
 
 function git_mirror {
