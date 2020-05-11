@@ -5,19 +5,21 @@
 # @param basedir puppet environments folder location. Defaults to 'this' puppet-server's setting.
 # @param cachedir Custom cache dir to use. Defaults to no setting and uses whatever default the script has.
 # @param hooksdir Custom hooks dir to use. Defaults to `r11k::default_hooks_dir`.
+# @param production_branch Set this param to use an alternate git branch as puppet 'production' environment.
 # @param command_prefix Custom string to prefix the command with. This should be shell safe!
 # @param command_suffix Custom string to suffix the command with. This should be shell safe!
 # @param job A hash with cron settings passed through to the cronjob.
 # @param includes Array (or single String) with regex filters with branches to convert to environments.
 define r11k::cron (
   String                          $git_base_repo,
-  Enum['present','absent']        $ensure           = 'present',
-  Stdlib::Absolutepath            $basedir          = $::settings::environmentpath,
-  Optional[Stdlib::Absolutepath]  $cachedir         = undef,
-  Optional[Stdlib::Absolutepath]  $hooksdir         = undef,
-  Optional[String]                $command_prefix   = undef,
-  Optional[String]                $command_suffix   = undef,
-  Hash[String,Any]                $job              = { 'minute' => '*/4', },
+  Enum['present','absent']        $ensure            = 'present',
+  Stdlib::Absolutepath            $basedir           = $::settings::environmentpath,
+  Optional[Stdlib::Absolutepath]  $cachedir          = undef,
+  Optional[Stdlib::Absolutepath]  $hooksdir          = undef,
+  Optional[String]                $production_branch = undef,
+  Optional[String]                $command_prefix    = undef,
+  Optional[String]                $command_suffix    = undef,
+  Hash[String,Any]                $job               = { 'minute' => '*/4', },
   Optional[Variant[String, Array[String]]] $includes = undef,
 ) {
 
@@ -29,9 +31,14 @@ define r11k::cron (
     default => ['--cachedir', $cachedir],
   }
 
-  $cmd_hooksdir  = $hooksdir ? {
+  $cmd_hooksdir = $hooksdir ? {
     undef   => ['--hooksdir', $::r11k::default_hooks_dir],
     default => ['--hooksdir', $hooksdir ],
+  }
+
+  $cmd_production_branch = $production_branch ? {
+    undef   => ['--production_branch', $::r11k::default_production_branch],
+    default => ['--production_branch', $production_branch ],
   }
 
   case $includes {
@@ -52,6 +59,7 @@ define r11k::cron (
     $cmd_basedir,
     $cmd_cachedir,
     $cmd_hooksdir,
+    $cmd_production_branch,
     $cmd_includes,
     $git_base_repo,
   ]).filter |$val| { $val =~ NotUndef }

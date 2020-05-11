@@ -21,6 +21,7 @@ class r11k (
   # exist to prevent a dependency / recursive directory creation mess
   $default_hooks_dir = '/etc/r11k/hooks.d'
   $default_env_hooks_dir = '/etc/r11k/env.hooks.d'
+  $default_production_branch = 'production'
 
   file {'/etc/r11k':
     ensure => 'directory',
