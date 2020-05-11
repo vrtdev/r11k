@@ -31,12 +31,12 @@ define r11k::cron (
     default => ['--cachedir', $cachedir],
   }
 
-  $cmd_hooksdir  = $hooksdir ? {
+  $cmd_hooksdir = $hooksdir ? {
     undef   => ['--hooksdir', $::r11k::default_hooks_dir],
     default => ['--hooksdir', $hooksdir ],
   }
 
-  $cmd_production_branch  = $production_branch ? {
+  $cmd_production_branch = $production_branch ? {
     undef   => ['--production_branch', $::r11k::default_production_branch],
     default => ['--production_branch', $production_branch ],
   }
