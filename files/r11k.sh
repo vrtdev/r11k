@@ -12,6 +12,7 @@ DEFAULT_REPO="."
 DEFAULT_BASEDIR="environments"
 DEFAULT_HOOKSDIR="/etc/r11k/hooks.d"
 DEFAULT_ENVHOOKSDIR="/etc/r11k/env.hooks.d"
+DEFAULT_PRODUCTION_BRANCH="production"
 
 LOCK="fail"
 
@@ -101,6 +102,7 @@ DEFAULT_CACHEDIR="${BASEDIR}/.cache"
 CACHEDIR="${R11K_CACHEDIR-${DEFAULT_CACHEDIR}}"
 HOOKSDIR="${R11K_HOOKSDIR-${DEFAULT_HOOKSDIR}}"
 ENVHOOKSDIR="${R11K_ENVHOOKSDIR-${DEFAULT_ENVHOOKSDIR}}"
+PRODUCTION_BRANCH="${R11K_PRODUCTION_BRANCH-${DEFAULT_PRODUCTION_BRANCH}}"
 INCLUDES=("${CMD_INCLUDES[@]:-${R11K_INCLUDES[@]:-}}")
 
 if [ $# -gt 0 ]; then
@@ -212,7 +214,7 @@ function do_submodules() {
 	done
 }
 function translate_branch_to_env() {
-    if [ -n "${R11K_PRODUCTION_BRANCH}" -a "${1}" == "${R11K_PRODUCTION_BRANCH}" ]
+    if [ -n "${PRODUCTION_BRANCH}" -a "${1}" == "${PRODUCTION_BRANCH}" ]
     then
         echo 'production'
     else
