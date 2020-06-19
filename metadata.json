@@ -3,10 +3,10 @@
   "version": "1.1.0",
   "author": "dpcops",
   "summary": "Manages git to puppet-environment mapping",
-  "license": "Apache",
-  "source": "ssh://git@atlas.vrt.be:7999/pup/dpcops-r11k.git",
-  "project_page": null,
-  "issues_url": null,
+  "license": "Apache-2.0",
+  "source": "https://github.com/vrtdev/r11k.git",
+  "project_page": "https://github.com/vrtdev/r11k.git",
+  "issues_url": "https://github.com/vrtdev/r11k.git",
   "dependencies": [
     {
       "name": "puppetlabs/stdlib",
@@ -18,6 +18,5 @@
       "name": "puppet",
       "version_requirement": "> 4.0.0 < 7.0.0"
     }
-  ],
-  "data_provider": null
+  ]
 }
