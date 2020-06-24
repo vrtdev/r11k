@@ -41,6 +41,7 @@ OPTIONS:
 	-p,--production_branch  Branch name to use as production.
 							This branch will be created as 'production' environment.
 							Do NOT include 'production' in --include when using this option.
+	-f,--flush_cache_cmd	Command to flush the puppet environment cache. Used only if set.
 	-i,--include            Branch or regex of branches to map. You can repeat this
 							option to include multiple branches/filters or provide
 							a list separated by colon \`:\`.  Defaults to
@@ -51,11 +52,13 @@ OPTIONS:
 
 ENVIRONMENT:
 
-	R11K_BASEDIR            Sets the default basedir to use.
-	R11K_CACHEDIR           Sets the default cache dir to use.
-	R11K_HOOKSDIR           Sets the default hooks dir to use.
-	R11K_ENVHOOKSDIR        Sets the default environments hooks dir to use.
-	R11K_INCLUDES           A colon separated list with branches/filters to use.
+	R11K_BASEDIR                    Sets the default basedir to use.
+	R11K_CACHEDIR                   Sets the default cache dir to use.
+	R11K_HOOKSDIR                   Sets the default hooks dir to use.
+	R11K_ENVHOOKSDIR                Sets the default environments hooks dir to use.
+	R11K_PRODUCTION_BRANCH          Sets the branch to promote to production branch.
+	R11K_FLUSH_PUPPET_CACHE_COMMAND Sets the command to flush the puppet environment cache.
+	R11K_INCLUDES                   A colon separated list with branches/filters to use.
 
 EOHELP
 }
@@ -70,8 +73,8 @@ fi
 
 ## No options = show help + exit EX_USAGE
 if GETOPT_TEMP="$( getopt --shell bash --name "$0" \
-	-o b:c:k:e:p:i:hw \
-	-l basedir:,cachedir:,hooksdir:,envhooksdir:,production_branch:,include:,help,no-wait \
+	-o b:c:k:e:p:f:i:hw \
+	-l basedir:,cachedir:,hooksdir:,envhooksdir:,production_branch:,flush_cache_cmd:,include:,help,no-wait \
 	-- "$@" )"; then
 	eval set -- "${GETOPT_TEMP}"
 else
@@ -86,6 +89,7 @@ while [ $# -gt 0 ]; do
 		-k|--hooksdir)          R11K_HOOKSDIR="${2}"; shift 2;;
 		-e|--envhooksdir)       R11K_ENVHOOKSDIR="${2}"; shift 2;;
 		-p|--production_branch) R11K_PRODUCTION_BRANCH="${2}"; shift 2;;
+		-f|--flush_cache_cmd)   R11K_FLUSH_PUPPET_CACHE_COMMAND="${2}"; shift 2;;
 		-i|--include)           IFS=: read -ra NEW_INCLUDES <<<"${2}"
 								CMD_INCLUDES+=("${NEW_INCLUDES[@]}");
 								shift 2;;
@@ -103,6 +107,7 @@ CACHEDIR="${R11K_CACHEDIR-${DEFAULT_CACHEDIR}}"
 HOOKSDIR="${R11K_HOOKSDIR-${DEFAULT_HOOKSDIR}}"
 ENVHOOKSDIR="${R11K_ENVHOOKSDIR-${DEFAULT_ENVHOOKSDIR}}"
 PRODUCTION_BRANCH="${R11K_PRODUCTION_BRANCH-${DEFAULT_PRODUCTION_BRANCH}}"
+FLUSH_PUPPET_CACHE_COMMAND="${R11K_FLUSH_PUPPET_CACHE_COMMAND}"
 INCLUDES=("${CMD_INCLUDES[@]:-${R11K_INCLUDES[@]:-}}")
 
 if [ $# -gt 0 ]; then
@@ -296,6 +301,13 @@ function run_hooks() {
 	done
 }
 
+function clear_puppet_cache() {
+	local env="$1"
+	if [[ -f "${FLUSH_PUPPET_CACHE_COMMAND}" && -x $(realpath "${FLUSH_PUPPET_CACHE_COMMAND}") ]]; then
+		${FLUSH_PUPPET_CACHE_COMMAND} ${env}
+	fi
+}
+
 BRANCHES=( "$( collect_branches )" );
 CHANGE_COUNTER=0
 
@@ -311,6 +323,7 @@ while read branch; do
 	if [ $PREV_COUNTER -ne $CHANGE_COUNTER ]; then
 		echo "${FONT_GREEN}Running environment hooks ${FONT_GREEN_BOLD}${branch}${FONT_NORMAL}"
 		run_hooks "${ENVHOOKSDIR}" "$branch" "$( translate_branch_to_env "${branch}" )"
+		clear_puppet_cache "$( translate_branch_to_env "${branch}" )"
 		PREV_COUNTER="${CHANGE_COUNTER}"
 	fi
 done <<<"${BRANCHES[@]}"
@@ -320,6 +333,7 @@ while read dir; do
 	if ! grep -q "${dir}$" "$SCRATCH/branches"; then
 		echo "${FONT_GREEN_BOLD}Removing non-existant branch ${dir}${FONT_NORMAL}"
 		rm -rf "$BASEDIR/$dir"
+		clear_puppet_cache "$dir"
 		let CHANGE_COUNTER+=1
 	fi
 done < <(cd "$BASEDIR"; ls -1)
