@@ -20,7 +20,7 @@ define r11k::cron (
   Optional[Stdlib::Absolutepath]  $hooksdir          = undef,
   Optional[Stdlib::Absolutepath]  $envhooksdir       = undef,
   Optional[String]                $production_branch = undef,
-  Optional[String]                $flush_cache_cmd   = undef,
+  Optional[Stdlib::Absolutepath]  $flush_cache_cmd   = undef,
   Optional[String]                $command_prefix    = undef,
   Optional[String]                $command_suffix    = undef,
   Hash[String,Any]                $job               = { 'minute' => '*/4', },

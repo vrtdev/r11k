@@ -52,13 +52,13 @@ OPTIONS:
 
 ENVIRONMENT:
 
-	R11K_BASEDIR            Sets the default basedir to use.
-	R11K_CACHEDIR           		Sets the default cache dir to use.
-	R11K_HOOKSDIR           		Sets the default hooks dir to use.
-	R11K_ENVHOOKSDIR        		Sets the default environments hooks dir to use.
-	R11K_PRODUCTION_BRANCH  		Sets the branch to promote to production branch.
+	R11K_BASEDIR                    Sets the default basedir to use.
+	R11K_CACHEDIR                   Sets the default cache dir to use.
+	R11K_HOOKSDIR                   Sets the default hooks dir to use.
+	R11K_ENVHOOKSDIR                Sets the default environments hooks dir to use.
+	R11K_PRODUCTION_BRANCH          Sets the branch to promote to production branch.
 	R11K_FLUSH_PUPPET_CACHE_COMMAND Sets the command to flush the puppet environment cache.
-	R11K_INCLUDES           		A colon separated list with branches/filters to use.
+	R11K_INCLUDES                   A colon separated list with branches/filters to use.
 
 EOHELP
 }
