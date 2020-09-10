@@ -1,6 +1,7 @@
 # Install a hook to run after something changed on a r11k run
 #
 # @param ensure Value can be either 'present' or 'absent'. Defaults to 'present'.
+# @param env_hook Boolean to use env_hook instead of the default one.
 # @param hook_source String indicating the source of the hookfile.
 # @param hook_content Content of the hook script.
 # @param hook_dir String indicating the folder where the hooks are located
